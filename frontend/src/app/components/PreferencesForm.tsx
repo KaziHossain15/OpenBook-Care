@@ -54,6 +54,42 @@ export function PreferencesForm({
               Medicare options as part of your decision.
             </div>
           )}
+
+          {(() => {
+            const age = preferences.age;
+            const income = preferences.income;
+            const familySize = preferences.familySize;
+            if (age < 19 || age > 64) return null;
+
+            const thresholds: Record<string, number> = {
+              "1": 21597,
+              "2": 29187,
+              "3": 36777,
+              "4": 44367,
+              "5+": 51957,
+            };
+
+            const limit = thresholds[familySize] ?? 51957;
+            if (income <= limit) {
+              return (
+                <div className="mt-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+                  Based on age {age} and household size {familySize}, your income
+                  of ${income.toLocaleString()} is at or below the Medicaid
+                  threshold (~${limit.toLocaleString()}). You may be eligible
+                  for Medicaid coverage.
+                </div>
+              );
+            }
+
+            return (
+              <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                For ages 19–64, Medicaid thresholds are approximately ${thresholds["1"].toLocaleString()} for
+                one person, ${thresholds["2"].toLocaleString()} for two people,
+                and increase for larger households. Your current income is
+                above the estimate for your household size.
+              </div>
+            );
+          })()}
         </div>
 
         {/* Annual Income */}
