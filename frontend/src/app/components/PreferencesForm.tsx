@@ -44,7 +44,7 @@ export function PreferencesForm({
             value={preferences.age}
             onChange={(e) => onFieldChange("age", Number(e.target.value))}
             min={18}
-            max={80}
+            max={100}
             step={1}
             className="w-full"
           />
