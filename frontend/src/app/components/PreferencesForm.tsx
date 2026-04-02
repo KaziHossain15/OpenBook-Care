@@ -55,6 +55,14 @@ export function PreferencesForm({
             </div>
           )}
 
+          {preferences.age >= 18 && preferences.age <= 22 && preferences.employmentStatus === "student" && (
+            <div className="mt-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+              As a student aged 18–22, you may also qualify for special
+              university/student health plans. Check with your school for
+              available coverage options.
+            </div>
+          )}
+
           {(() => {
             const age = preferences.age;
             const income = preferences.income;
