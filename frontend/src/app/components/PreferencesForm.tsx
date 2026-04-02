@@ -48,6 +48,12 @@ export function PreferencesForm({
             step={1}
             className="w-full"
           />
+          {preferences.age >= 65 && (
+            <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+              You are eligible for Medicare coverage (65+). Consider reviewing
+              Medicare options as part of your decision.
+            </div>
+          )}
         </div>
 
         {/* Annual Income */}
