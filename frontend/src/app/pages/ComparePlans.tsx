@@ -296,7 +296,7 @@ export function ComparePlans() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
               Back to Comparison
             </button>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em" }}>Step 4 of 4</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em" }}>Step 3 of 3</div>
           </div>
 
           <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -441,13 +441,13 @@ export function ComparePlans() {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
           <button
-            onClick={() => navigate("/cost-results")}
+            onClick={() => navigate("/")}
             style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, color: "#6b7280", padding: 0 }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
             Back
           </button>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em" }}>Step 3 of 4</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em" }}>Step 2 of 3</div>
         </div>
 
         <div style={{ textAlign: "center", marginBottom: 32 }}>
