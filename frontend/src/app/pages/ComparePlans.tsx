@@ -284,7 +284,7 @@ export function ComparePlans() {
   const [plans, setPlans] = useState<Plan[]>(STATIC_PLANS);
 
   useEffect(() => {
-    const region = (preferences.location ?? "MA").trim();
+    const region = preferences.zipCode ?? "";
     fetch(`/api/plans?zip=${encodeURIComponent(region)}`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -294,7 +294,7 @@ export function ComparePlans() {
       .catch(() => {
         // CMS API unavailable — keep STATIC_PLANS already in state
       });
-  }, [preferences.location]);
+  }, [preferences.zipCode]);
 
   const [activeIndex, setActiveIndex] = useState(1);
   const [dependents, setDependents] = useState(0);
