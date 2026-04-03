@@ -1,6 +1,6 @@
 ## OpenBook Care – Homepage Frontend
 
-This repository contains a React + Vite frontend located in `homepage/frontend`.
+This repository contains a React + Vite frontend located in `frontend`.
 
 ### Prerequisites
 
@@ -18,7 +18,7 @@ This repository contains a React + Vite frontend located in `homepage/frontend`.
 
 ### 2. Install dependencies
 
-All frontend code and its `package.json` live in `homepage/frontend`.
+All frontend code and its `package.json` live in `frontend`.
 
 **Option A – Recommended: use the helper script**
 
@@ -34,7 +34,7 @@ This will install all required dependencies for you
 **Option B – Manual install**
 
 ```bash
-cd "homepage/frontend"
+cd "frontend"
 npm install
 ```
 
@@ -42,7 +42,7 @@ This downloads all required dependencies into `node_modules`.
 
 ### 3. Run the development server (for local testing)
 
-From inside `homepage/frontend`:
+From inside `frontend`:
 
 ```bash
 npm run dev
@@ -56,7 +56,7 @@ npm run dev
 To compile the app and create an optimized production build:
 
 ```bash
-cd "homepage/frontend"
+cd "frontend"
 npm run build
 ```
 
@@ -67,7 +67,7 @@ Vite will output static assets into the `dist` folder.
 After building, you can preview the production build locally:
 
 ```bash
-cd "homepage/frontend"
+cd "frontend"
 npm run preview
 ```
 

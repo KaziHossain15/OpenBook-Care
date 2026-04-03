@@ -2,10 +2,10 @@
 
 set -e
 
-echo "==> Installing frontend dependencies for OpenBook Care"
+echo "==> Installing dependencies for OpenBook Care"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FRONTEND_DIR="$SCRIPT_DIR/homepage/frontend"
+FRONTEND_DIR="$SCRIPT_DIR/frontend"
 
 if ! command -v node >/dev/null 2>&1; then
   echo "Error: Node.js is not installed. Please install it from https://nodejs.org and re-run this script."
@@ -20,11 +20,21 @@ fi
 echo "Using Node: $(node -v)"
 echo "Using npm:  $(npm -v)"
 
+if [ ! -d "$FRONTEND_DIR" ]; then
+  echo "Error: frontend directory not found at: $FRONTEND_DIR"
+  exit 1
+fi
+
 cd "$FRONTEND_DIR"
 echo "Working directory: $FRONTEND_DIR"
 
-echo "==> Running npm install ..."
-npm install
+if [ -f "package-lock.json" ]; then
+  echo "==> Running npm ci ..."
+  npm ci
+else
+  echo "==> Running npm install ..."
+  npm install
+fi
 
 echo "✅ Dependencies installed successfully."
 
