@@ -6,7 +6,7 @@
 
 import React from "react";
 import { ArrowRight } from "lucide-react";
-import type { UserPreferences } from "../models/UserPreferences";
+import { isValidZipCode, type UserPreferences } from "../models/UserPreferences";
 import { CoverageEligibilityCallouts } from "./CoverageEligibilityCallouts";
 
 interface PreferencesFormProps {
@@ -74,12 +74,41 @@ export function PreferencesForm({
           />
         </div>
 
-        {/* Location (read-only for now — state locked to MA) */}
+        {/* ZIP code */}
         <div>
-          <label className="mb-2 block text-sm font-medium">Location</label>
-          <div className="flex items-center px-3 py-2 border rounded-md bg-gray-50">
-            <span className="text-sm">Massachusetts</span>
-          </div>
+          <label className="mb-2 block text-sm font-medium" htmlFor="zipCode">
+            ZIP code
+          </label>
+          <input
+            id="zipCode"
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            placeholder="e.g. 02101"
+            maxLength={5}
+            className={`w-full rounded-md border px-3 py-2 text-sm tracking-wider tabular-nums ${
+              preferences.zipCode.length > 0 && !isValidZipCode(preferences.zipCode)
+                ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                : ""
+            }`}
+            value={preferences.zipCode}
+            onChange={(e) =>
+              onFieldChange(
+                "zipCode",
+                e.target.value.replace(/\D/g, "").slice(0, 5),
+              )
+            }
+            aria-invalid={preferences.zipCode.length > 0 && !isValidZipCode(preferences.zipCode)}
+          />
+          <p className="mt-1.5 text-xs text-gray-500">
+            Enter your 5-digit US ZIP code. We use it to tailor plan and cost
+            context to your area.
+          </p>
+          {preferences.zipCode.length > 0 && !isValidZipCode(preferences.zipCode) && (
+            <p className="mt-1 text-xs text-red-600" role="status">
+              Please enter a valid 5-digit ZIP code.
+            </p>
+          )}
         </div>
 
         {/* Family Size */}

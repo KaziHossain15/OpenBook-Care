@@ -14,7 +14,8 @@ export type EmploymentStatus =
 export interface UserPreferences {
   age: number;
   income: number;
-  location: string;
+  /** US ZIP — exactly five digits (0–9). */
+  zipCode: string;
   familySize: string;
   employmentStatus: EmploymentStatus;
   riskTolerance: RiskTolerance;
@@ -23,11 +24,16 @@ export interface UserPreferences {
 export const DEFAULT_PREFERENCES: UserPreferences = {
   age: 30,
   income: 50000,
-  location: "MA",
+  zipCode: "",
   familySize: "1",
   employmentStatus: "employed",
   riskTolerance: "moderate",
 };
+
+/** True when `zip` is a five-digit US ZIP code string. */
+export function isValidZipCode(zip: string): boolean {
+  return /^\d{5}$/.test(zip);
+}
 
 /** Information Expert: only this model knows what makes preferences valid */
 export function isPreferencesValid(prefs: UserPreferences): boolean {
@@ -35,6 +41,7 @@ export function isPreferencesValid(prefs: UserPreferences): boolean {
     prefs.age >= 18 &&
     prefs.age <= 100 &&
     prefs.income >= 0 &&
+    isValidZipCode(prefs.zipCode) &&
     !!prefs.familySize &&
     !!prefs.employmentStatus &&
     !!prefs.riskTolerance
@@ -47,5 +54,21 @@ export function serializePreferences(prefs: UserPreferences): string {
 }
 
 export function deserializePreferences(raw: string): UserPreferences {
-  return { ...DEFAULT_PREFERENCES, ...JSON.parse(raw) };
+  const parsed = JSON.parse(raw) as Partial<UserPreferences> & {
+    location?: string;
+  };
+  const { location: legacyLocation, ...rest } = parsed;
+  const merged: UserPreferences = {
+    ...DEFAULT_PREFERENCES,
+    ...rest,
+    zipCode:
+      typeof parsed.zipCode === "string"
+        ? parsed.zipCode.replace(/\D/g, "").slice(0, 5)
+        : DEFAULT_PREFERENCES.zipCode,
+  };
+  // Legacy sessions stored state abbreviation in `location` instead of ZIP.
+  if (!isValidZipCode(merged.zipCode) && legacyLocation === "MA") {
+    merged.zipCode = "02101";
+  }
+  return merged;
 }
