@@ -5,6 +5,7 @@ import { SimulateUsage } from "./app/pages/SimulateUsage";
 import { InputScreen } from "./app/pages/InputScreen";
 import { CostResultsPage } from "./app/pages/CostResultsPage";
 import { ComparePlans } from "./app/pages/ComparePlans";
+import { AiAssistantComingSoon } from "./app/pages/AiAssistantComingSoon";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <Route path="/" element={<InputScreen />} />
         <Route path="/cost-results" element={<CostResultsPage />} />
         <Route path="/compare-plans" element={<ComparePlans />} />
+        <Route path="/ai-assistant" element={<AiAssistantComingSoon />} />
         <Route path="/simulate-usage" element={<SimulateUsage />} />
       </Routes>
     </BrowserRouter>

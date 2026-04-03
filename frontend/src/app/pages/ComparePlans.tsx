@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLayoutEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CoverageEligibilityCallouts } from "../components/CoverageEligibilityCallouts";
 import {
   DEFAULT_PREFERENCES,
@@ -265,8 +265,19 @@ function NavButton({ onClick, disabled, side, children }: NavButtonProps) {
 // ComparePlans owns all state for the compare + detail views and delegates
 // rendering to the sub-components above. Navigation calls are isolated here.
 
+/** Serialized when opening AI assistant so return navigation can reopen the simulation. */
+export interface ComparePlansSimulationSnapshot {
+  activeIndex: number;
+  dependents: number;
+  primaryVisits: number;
+  specialistVisits: number;
+  prescriptions: number;
+  erVisits: number;
+}
+
 export function ComparePlans() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [preferences] = useState<UserPreferences>(loadStoredPreferences);
 
@@ -300,6 +311,24 @@ export function ComparePlans() {
   const monthlyAvg = Math.round(totalAnnual / 12);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "instant" });
+
+  useLayoutEffect(() => {
+    const restore = (
+      location.state as { restoreSimulation?: ComparePlansSimulationSnapshot } | null
+    )?.restoreSimulation;
+    if (!restore) return;
+
+    const maxPlan = plans.length - 1;
+    setActiveIndex(Math.min(Math.max(0, restore.activeIndex), maxPlan));
+    setDependents(Math.min(3, Math.max(0, restore.dependents)));
+    setPrimaryVisits(restore.primaryVisits);
+    setSpecialistVisits(restore.specialistVisits);
+    setPrescriptions(restore.prescriptions);
+    setErVisits(restore.erVisits);
+    setShowDetail(true);
+    window.scrollTo({ top: 0, behavior: "instant" });
+    navigate(".", { replace: true, state: {} });
+  }, [location.key, location.state, navigate]);
 
   // ── Detail / Cost Simulation view ─────────────────────────────────────────
   if (showDetail) {
@@ -435,7 +464,21 @@ export function ComparePlans() {
               </div>
 
               {/* CTA buttons */}
-              <button style={{ width: "100%", padding: 16, background: "#0f0f1a", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const comparePlansReturn: ComparePlansSimulationSnapshot = {
+                    activeIndex,
+                    dependents,
+                    primaryVisits,
+                    specialistVisits,
+                    prescriptions,
+                    erVisits,
+                  };
+                  navigate("/ai-assistant", { state: { comparePlansReturn } });
+                }}
+                style={{ width: "100%", padding: 16, background: "#0f0f1a", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
