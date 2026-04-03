@@ -7,6 +7,7 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import type { UserPreferences } from "../models/UserPreferences";
+import { CoverageEligibilityCallouts } from "./CoverageEligibilityCallouts";
 
 interface PreferencesFormProps {
   preferences: UserPreferences;
@@ -44,9 +45,13 @@ export function PreferencesForm({
             value={preferences.age}
             onChange={(e) => onFieldChange("age", Number(e.target.value))}
             min={18}
-            max={80}
+            max={100}
             step={1}
             className="w-full"
+          />
+          <CoverageEligibilityCallouts
+            preferences={preferences}
+            className="mt-2"
           />
         </div>
 
