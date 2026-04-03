@@ -1,126 +1,119 @@
-## OpenBook Care – Homepage Frontend
+# OpenBook Care
 
-This repository contains a React + Vite frontend located in `homepage/frontend`.
+A healthcare cost-transparency web app built for BU CS411. Users input demographics, compare insurance plans with live regional pricing, simulate healthcare usage costs, and get educational guidance from an AI assistant.
+
+**Stack:** React 18 + TypeScript + Vite (frontend) · FastAPI + Python (backend) · Anthropic Claude API (AI/ML)
+
+---
+
+## Running Locally
+
+Two processes must run simultaneously: the Vite frontend and the FastAPI backend.
 
 ### Prerequisites
 
-- **Node.js**: Install the latest LTS version from [nodejs.org](https://nodejs.org).  
-- **Package manager**: The project works with `npm`, `yarn`, or `pnpm`. The examples below use **npm**.
+- **Node.js** 18+ — [nodejs.org](https://nodejs.org)
+- **Python** 3.9+ — [python.org](https://python.org)
 
-### 1. Clone or open the project
+---
 
-- **If using Git**:  
-  - `git clone <your-repo-url>`  
-  - `cd OpenBook Care`
-- **If this folder is already on your machine** (e.g. you downloaded or unzipped it):  
-  - Open it in your editor/terminal  
-  - `cd "OpenBook Care"`
-
-### 2. Install dependencies
-
-All frontend code and its `package.json` live in `homepage/frontend`.
-
-**Option A – Recommended: use the helper script**
-
-From the project root:
+### 1. Frontend
 
 ```bash
-cd "OpenBook Care"
-chmod +x install-deps.sh   # first time only
-./install-deps.sh
-```
-This will install all required dependencies for you
-
-**Option B – Manual install**
-
-```bash
-cd "homepage/frontend"
+cd frontend
 npm install
-```
-
-This downloads all required dependencies into `node_modules`.
-
-### 3. Run the development server (for local testing)
-
-From inside `homepage/frontend`:
-
-```bash
 npm run dev
 ```
 
-- Vite will start a dev server (by default at `http://localhost:5173` or whatever URL it prints in the terminal).
-- Open that URL in your browser to view the app.
+Runs at `http://localhost:5173`. The Vite dev proxy forwards all `/api/*` requests to the backend on port 8000 automatically — no CORS configuration needed.
 
-### 4. Build for production (optional)
+---
 
-To compile the app and create an optimized production build:
+### 2. Backend (CMS Integration)
+
+In a **separate terminal**:
 
 ```bash
-cd "homepage/frontend"
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
+```
+
+> **Note:** Use `python -m uvicorn` rather than `uvicorn` directly if the command is not found after install.
+
+The backend exposes one endpoint:
+
+```
+GET /api/plans?zip=XXXXX
+```
+
+Pulls live regional copay data from two CMS datasets (Family Practice `bb4c-dcdf`, Internal Medicine `9735-7176`). No API key required. If the backend is not running, the frontend silently falls back to static plan data.
+
+**Verify the backend is working:**
+
+```bash
+curl "http://localhost:8000/api/plans?zip=02134"
+```
+
+You should see JSON with real regional copay figures.
+
+---
+
+### 3. Build for production
+
+```bash
+cd frontend
 npm run build
 ```
 
-Vite will output static assets into the `dist` folder.
+Output goes to `frontend/dist/`.
 
-### 5. Preview the production build (optional)
+---
 
-After building, you can preview the production build locally:
+## Project Structure
 
-```bash
-cd "homepage/frontend"
-npm run preview
+```
+frontend/        React + TypeScript + Vite app
+backend/         FastAPI backend (CMS integration)
+ai-ml/           Python AI/ML module (chatbot, explanation service, LLM gateway)
 ```
 
-Then open the URL Vite prints (usually `http://localhost:4173`).
+---
 
-### Common issues
+## AI/ML Module
 
-- **Command not found: npm**  
-  - Install Node.js from [nodejs.org](https://nodejs.org), then restart your terminal.
-- **Port already in use**  
-  - If `npm run dev` complains about a port being used, either stop the other process or let Vite pick another port when prompted.
+The `ai-ml/` folder contains the chatbot and cost-explanation logic powered by the Anthropic Claude API. It is functional at the Python module level and supports mock and live chat flows. It is not yet connected to FastAPI routes or the frontend UI.
 
-## AI/ML Draft Structure
+### Responsibilities
 
-The `ai-ml/` folder contains the draft AI/ML workstream for OpenBook Care. This section is not yet wired into the frontend, but it already contains the core chat and explanation logic.
-
-### Current AI/ML responsibilities
-- chatbot session flow
-- disclaimer acknowledgement
-- safe educational responses
-- plan explanation generation
-- provider-agnostic LLM gateway design
+- Chatbot session flow and disclaimer acknowledgement
+- Safe educational responses (no medical/legal advice)
+- Plan explanation generation
+- Provider-agnostic LLM gateway with Anthropic adapter
 
 ### Folder overview
 
-- `ai-ml/docs/`
-  - design notes and architecture documentation
-  - main file: `ai-ml/docs/ai-ml-design-note.md`
+| Path | Contents |
+|---|---|
+| `ai-ml/docs/` | Design notes and architecture documentation |
+| `ai-ml/src/domain/` | Core entities: chat session, message, disclaimer, domain errors |
+| `ai-ml/src/application/` | Use-case coordination: chatbot controller, explanation service |
+| `ai-ml/src/contracts/` | DTO-style request/response contracts, error codes |
+| `ai-ml/src/infrastructure/` | Session store, prompt builder, LLM gateway, Anthropic adapter |
+| `ai-ml/tests/` | Tests for domain, application, contracts, and infrastructure layers |
 
-- `ai-ml/src/domain/`
-  - core entities and rules
-  - chat session, chat message, disclaimer, domain errors
+---
 
-- `ai-ml/src/application/`
-  - use-case coordination
-  - chatbot controller and explanation service
+## Common Issues
 
-- `ai-ml/src/contracts/`
-  - DTO-style request/response contracts
-  - error code definitions
+**`uvicorn: command not found`**
+Use `python -m uvicorn main:app --reload --port 8000` instead.
 
-- `ai-ml/src/infrastructure/`
-  - in-memory session store
-  - prompt builder
-  - provider-agnostic LLM gateway
-  - mock LLM gateway
-  - Anthropic adapter
-  - LLM gateway factory
+**`pip: command not found`**
+Use `python -m pip install -r requirements.txt` instead.
 
-- `ai-ml/tests/`
-  - tests for domain, application, contracts, and infrastructure
+**`npm: command not found`**
+Install Node.js from [nodejs.org](https://nodejs.org) and restart your terminal.
 
-### Current status
-- functional at the Python module level
-- supports mock chat flow and explanation flow
-- not yet connected to FastAPI routes or frontend UI
+**Port already in use**
+Stop the conflicting process or change the port. If you change the backend port, update the proxy target in `frontend/vite.config.ts` to match.
