@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CoverageEligibilityCallouts } from "../components/CoverageEligibilityCallouts";
 import {
@@ -43,7 +43,7 @@ interface Plan {
 
 // ── Static data ──────────────────────────────────────────────────────────────
 
-const plans: Plan[] = [
+const STATIC_PLANS: Plan[] = [
   {
     planId: "p1", planType: "Basic",
     name: "HealthFirst Essential", provider: "HealthFirst",
@@ -280,6 +280,21 @@ export function ComparePlans() {
   const location = useLocation();
 
   const [preferences] = useState<UserPreferences>(loadStoredPreferences);
+
+  const [plans, setPlans] = useState<Plan[]>(STATIC_PLANS);
+
+  useEffect(() => {
+    const region = (preferences.location ?? "MA").trim();
+    fetch(`/api/plans?zip=${encodeURIComponent(region)}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<Plan[]>;
+      })
+      .then(setPlans)
+      .catch(() => {
+        // CMS API unavailable — keep STATIC_PLANS already in state
+      });
+  }, [preferences.location]);
 
   const [activeIndex, setActiveIndex] = useState(1);
   const [dependents, setDependents] = useState(0);

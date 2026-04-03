@@ -54,7 +54,7 @@ export function useInputScreenController(): InputScreenController {
   const submit = useCallback(() => {
     if (!isPreferencesValid(preferences)) return;
     sessionStorage.setItem("userPreferences", serializePreferences(preferences));
-    navigate("/cost-results");
+    navigate("/compare-plans");
   }, [preferences, navigate]);
 
   return { preferences, isValid, updateField, submit };
