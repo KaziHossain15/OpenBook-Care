@@ -1,5 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CoverageEligibilityCallouts } from "../components/CoverageEligibilityCallouts";
+import {
+  DEFAULT_PREFERENCES,
+  deserializePreferences,
+  type UserPreferences,
+} from "../models/UserPreferences";
+
+function loadStoredPreferences(): UserPreferences {
+  try {
+    const raw = sessionStorage.getItem("userPreferences");
+    if (raw) return deserializePreferences(raw);
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PREFERENCES;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -252,6 +268,8 @@ function NavButton({ onClick, disabled, side, children }: NavButtonProps) {
 export function ComparePlans() {
   const navigate = useNavigate();
 
+  const [preferences] = useState<UserPreferences>(loadStoredPreferences);
+
   const [activeIndex, setActiveIndex] = useState(1);
   const [dependents, setDependents] = useState(0);
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -454,6 +472,11 @@ export function ComparePlans() {
           <h1 style={{ fontSize: 34, fontWeight: 900, color: "#1a1a2e", letterSpacing: "-0.03em" }}>Compare Plans Side-by-Side</h1>
           <p style={{ fontSize: 15, color: "#6b7280", marginTop: 8 }}>Swipe through plans to find the best value for your needs</p>
         </div>
+
+        <CoverageEligibilityCallouts
+          preferences={preferences}
+          className="mb-6 max-w-[720px] mx-auto text-left"
+        />
 
         {/* Simulate Changes */}
         <div style={{ background: "#fff", borderRadius: 16, padding: "20px 24px", marginBottom: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
