@@ -490,7 +490,55 @@ export function ComparePlans() {
                     prescriptions,
                     erVisits,
                   };
-                  navigate("/ai-assistant", { state: { comparePlansReturn } });
+                  navigate("/ai-assistant", {
+                    state: {
+                      comparePlansReturn,
+                      chatContext: {
+                        currentView: "cost-simulation",
+                        source: "compare-plans",
+                        userInputs: {
+                          age: preferences.age,
+                          income: preferences.income,
+                          zipCode: preferences.zipCode,
+                          familySize: preferences.familySize,
+                          employmentStatus: preferences.employmentStatus,
+                          riskTolerance: preferences.riskTolerance,
+                          dependents,
+                          primaryVisits,
+                          specialistVisits,
+                          prescriptions,
+                          erVisits,
+                        },
+                        currentPlan: {
+                          name: plan.name,
+                          provider: plan.provider,
+                          planType: plan.planType,
+                          premium: Math.round(plan.premium * multiplier),
+                          deductible: Math.round(plan.deductible * multiplier),
+                          oopMax: Math.round(plan.oopMax * multiplier),
+                          primaryCopay: plan.copays.primary,
+                          specialistCopay: plan.copays.specialist,
+                          prescriptionCoverage: plan.copays.rx,
+                        },
+                        simulationSummary: {
+                          annualPremium,
+                          estimatedOutOfPocket: estimatedOOP,
+                          totalAnnualCost: totalAnnual,
+                          monthlyAverage: monthlyAvg,
+                        },
+                        selectedPlans: plans.map((candidate) => ({
+                          name: candidate.name,
+                          estimatedYearlyCostMin: Math.round(
+                            candidate.premium * 12 * multiplier,
+                          ),
+                          estimatedYearlyCostMax: Math.round(
+                            candidate.premium * 12 * multiplier +
+                              candidate.oopMax * multiplier,
+                          ),
+                        })),
+                      },
+                    },
+                  });
                 }}
                 style={{ width: "100%", padding: 16, background: "#0f0f1a", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
               >

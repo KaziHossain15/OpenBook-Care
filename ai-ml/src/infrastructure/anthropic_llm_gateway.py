@@ -20,12 +20,16 @@ class AnthropicLlmGateway:
         self,
         *,
         api_key: str | None = None,
-        model: str = "claude-3-5-sonnet-latest",
+        model: str | None = None,
         max_tokens: int = 300,
         timeout_seconds: int = 20,
     ) -> None:
         self._api_key = api_key if api_key is not None else os.getenv("ANTHROPIC_API_KEY", "")
-        self._model = model
+        self._model = (
+            model
+            if model is not None
+            else os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+        )
         self._max_tokens = max_tokens
         self._timeout_seconds = timeout_seconds
 

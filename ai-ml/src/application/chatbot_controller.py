@@ -39,6 +39,18 @@ from .explanation_service import ExplanationService
 class ChatbotController:
     """Coordinates chat session creation, disclaimer acknowledgement, and messages."""
 
+    _UNSAFE_HINTS = (
+        "chest pain",
+        "trouble breathing",
+        "diagnose",
+        "diagnosis",
+        "treatment",
+        "what should i take",
+        "emergency",
+        "stroke",
+        "heart attack",
+    )
+
     def __init__(
         self,
         *,
@@ -121,6 +133,21 @@ class ChatbotController:
         except SessionClosedError as exc:
             return self._error(SESSION_CLOSED, str(exc))
 
+        if self._is_unsafe_request(message):
+            assistant_message = session.add_assistant_message(
+                "I cannot provide diagnosis or urgent medical advice. "
+                "Please contact a qualified professional or emergency services if this may be urgent."
+            )
+            self._session_store.save(session)
+            return SubmitMessageResponseDTO(
+                sessionId=str(session.session_id),
+                userMessage=self._serialize_message(user_message),
+                assistantMessage=self._serialize_message(assistant_message),
+                providerMode="safety-filter",
+                errorCode=UNSAFE_REQUEST_BLOCKED,
+                disclaimerShown=True,
+            ).to_dict()
+
         try:
             prompt_package = self._prompt_builder.build(
                 user_message=message,
@@ -178,3 +205,8 @@ class ChatbotController:
             errorCode=code,
             message=message,
         ).to_dict()
+
+    @classmethod
+    def _is_unsafe_request(cls, message: str) -> bool:
+        normalized = str(message).strip().lower()
+        return any(hint in normalized for hint in cls._UNSAFE_HINTS)

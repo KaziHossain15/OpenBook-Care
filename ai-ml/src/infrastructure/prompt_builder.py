@@ -47,9 +47,31 @@ class PromptBuilder:
         user_inputs = context.get("userInputs")
         normalized_inputs = user_inputs if isinstance(user_inputs, dict) else {}
 
+        current_plan = context.get("currentPlan")
+        normalized_current_plan = {}
+        if isinstance(current_plan, dict):
+            normalized_current_plan = {
+                "name": self._clip(current_plan.get("name")),
+                "provider": self._clip(current_plan.get("provider")),
+                "planType": self._clip(current_plan.get("planType")),
+                "premium": current_plan.get("premium"),
+                "deductible": current_plan.get("deductible"),
+                "oopMax": current_plan.get("oopMax"),
+                "primaryCopay": current_plan.get("primaryCopay"),
+                "specialistCopay": current_plan.get("specialistCopay"),
+                "prescriptionCoverage": self._clip(current_plan.get("prescriptionCoverage")),
+            }
+
+        simulation_summary = context.get("simulationSummary")
+        normalized_simulation_summary = (
+            simulation_summary if isinstance(simulation_summary, dict) else {}
+        )
+
         return {
             "userInputs": normalized_inputs,
             "selectedPlans": normalized_plans,
+            "currentPlan": normalized_current_plan,
+            "simulationSummary": normalized_simulation_summary,
             "currentView": self._clip(context.get("currentView")),
             "source": self._clip(context.get("source")) or "frontend",
         }

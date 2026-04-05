@@ -1,45 +1,136 @@
 """
 FastAPI backend for OpenBook Care.
 
-Endpoint: GET /api/plans?zip=<5-digit-zip>
-  - Calls two CMS specialty cost datasets via the public DKAN datastore API
-    (no API key required).
-  - Returns a JSON array shaped to match the Plan interface in ComparePlans.tsx.
-  - Returns HTTP 503 if the CMS API is unreachable so the frontend can fall
-    back to its hardcoded plans.
-
-Datasets (distribution UUIDs retrieved 2026-04-03):
-  bb4c-dcdf  Family Practice Office Visit Costs
-    → distribution: c31e250c-cc6b-5e78-82d5-7e88bb3c1d3c
-    https://data.cms.gov/provider-data/dataset/bb4c-dcdf
-
-  9735-7176  Internal Medicine Office Visit Costs
-    → distribution: aeeaa1c0-c717-549b-8f11-752491183057
-    https://data.cms.gov/provider-data/dataset/9735-7176
-
-  If CMS rotates a UUID, re-fetch with:
-    curl "https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items/<dataset-id>?show-reference-ids=true"
-  and update _CMS_PCP_RESOURCE_ID / _CMS_SPEC_RESOURCE_ID below.
+Endpoints:
+  - GET /api/plans?zip=<5-digit-zip>
+  - POST /api/chat/session
+  - POST /api/chat/{session_id}/acknowledge-disclaimer
+  - POST /api/chat/{session_id}/messages
 
 To run:
   pip install -r requirements.txt
   uvicorn main:app --reload --port 8000
 """
 
+from __future__ import annotations
+
 import asyncio
+import os
+import sys
+from pathlib import Path
+from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+AI_ML_SRC = ROOT_DIR / "ai-ml" / "src"
+if str(AI_ML_SRC) not in sys.path:
+    sys.path.insert(0, str(AI_ML_SRC))
+
+from application import ChatbotController  # noqa: E402
+from contracts.error_codes import (  # noqa: E402
+    DISCLAIMER_REQUIRED,
+    EMPTY_MESSAGE,
+    INVALID_REQUEST,
+    PROMPT_BUILD_FAILED,
+    PROVIDER_UNAVAILABLE,
+    SESSION_CLOSED,
+    SESSION_NOT_FOUND,
+    UNSAFE_REQUEST_BLOCKED,
+)
+from domain import Disclaimer  # noqa: E402
+from infrastructure import (  # noqa: E402
+    InMemoryChatSessionStore,
+    PromptBuilder,
+)
+from infrastructure.llm_gateway_factory import build_llm_gateway  # noqa: E402
 
 app = FastAPI(title="OpenBook Care API")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+def _load_dotenv() -> None:
+    for env_path in (ROOT_DIR / ".env", Path(__file__).resolve().parent / ".env"):
+        if not env_path.exists():
+            continue
+
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            if not key or key in os.environ:
+                continue
+
+            cleaned = value.strip().strip("'").strip('"')
+            os.environ[key] = cleaned
+
+
+_load_dotenv()
+
+
+def _default_chat_mode() -> str:
+    configured = os.getenv("OPENBOOK_CHAT_MODE")
+    if configured and configured.strip():
+        return configured.strip()
+    return "anthropic" if os.getenv("ANTHROPIC_API_KEY") else "mock"
+
+
+CHATBOT_CONTROLLER = ChatbotController(
+    session_store=InMemoryChatSessionStore(),
+    gateway=build_llm_gateway(_default_chat_mode()),
+    prompt_builder=PromptBuilder(),
+    disclaimer=Disclaimer(
+        disclaimer_id="not-medical-advice",
+        text=(
+            "NOT MEDICAL ADVICE. OpenBook Care provides educational guidance about "
+            "healthcare costs and insurance. It does not provide diagnosis, "
+            "treatment, or emergency medical advice."
+        ),
+        version="v1",
+    ),
+)
+
+
+class AcknowledgeDisclaimerRequest(BaseModel):
+    acknowledged: bool = Field(default=True)
+
+
+class SubmitMessageRequest(BaseModel):
+    message: str = Field(min_length=1)
+    context: dict[str, Any] = Field(default_factory=dict)
+
+
+_ERROR_STATUS = {
+    INVALID_REQUEST: 400,
+    DISCLAIMER_REQUIRED: 403,
+    EMPTY_MESSAGE: 400,
+    SESSION_NOT_FOUND: 404,
+    SESSION_CLOSED: 409,
+    PROMPT_BUILD_FAILED: 400,
+    PROVIDER_UNAVAILABLE: 503,
+    UNSAFE_REQUEST_BLOCKED: 200,
+}
+
+
+def _response_or_error(payload: dict[str, Any]) -> dict[str, Any]:
+    error_code = payload.get("errorCode")
+    if error_code:
+        status_code = _ERROR_STATUS.get(str(error_code), 400)
+        raise HTTPException(status_code=status_code, detail=payload)
+    return payload
 
 # ── CMS constants ─────────────────────────────────────────────────────────────
 
@@ -204,3 +295,38 @@ async def get_plans(
         )
 
     return _build_plans(zip_code, pcp, spec)
+
+
+@app.post("/api/chat/session")
+async def create_chat_session():
+    return CHATBOT_CONTROLLER.create_session()
+
+
+@app.post("/api/chat/{session_id}/acknowledge-disclaimer")
+async def acknowledge_disclaimer(
+    session_id: str,
+    request: AcknowledgeDisclaimerRequest,
+):
+    if not request.acknowledged:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "errorCode": INVALID_REQUEST,
+                "message": "Disclaimer acknowledgement must be true.",
+            },
+        )
+    return _response_or_error(CHATBOT_CONTROLLER.acknowledge_disclaimer(session_id))
+
+
+@app.post("/api/chat/{session_id}/messages")
+async def submit_chat_message(
+    session_id: str,
+    request: SubmitMessageRequest,
+):
+    return _response_or_error(
+        CHATBOT_CONTROLLER.submit_message(
+            session_id=session_id,
+            message=request.message,
+            context=request.context,
+        )
+    )

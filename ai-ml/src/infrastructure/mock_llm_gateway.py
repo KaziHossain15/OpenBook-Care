@@ -71,9 +71,17 @@ class MockLlmGateway:
         if "compare" in question or "difference" in question:
             return GatewayResult(
                 status=GatewayResultStatus.SUCCESS,
-                content=(
-                    "The main difference is usually the tradeoff between monthly premium, deductible, and worst-case yearly risk."
-                ),
+                content=self._comparison_response(context),
+                provider_mode="mock",
+            )
+
+        if any(
+            hint in question
+            for hint in ("my cost", "total cost", "monthly average", "annual cost", "out-of-pocket")
+        ):
+            return GatewayResult(
+                status=GatewayResultStatus.SUCCESS,
+                content=self._cost_summary_response(context),
                 provider_mode="mock",
             )
 
@@ -96,4 +104,53 @@ class MockLlmGateway:
                 return f"{name} is currently ranked highly because {reason.lower()}."
         return (
             "A higher-ranked plan usually balances expected yearly cost, downside risk, and your stated preferences better."
+        )
+
+    @staticmethod
+    def _comparison_response(context: dict[str, Any]) -> str:
+        current_plan = context.get("currentPlan") if isinstance(context, dict) else None
+        simulation = context.get("simulationSummary") if isinstance(context, dict) else None
+        if isinstance(current_plan, dict):
+            name = current_plan.get("name") or "This plan"
+            premium = current_plan.get("premium")
+            deductible = current_plan.get("deductible")
+            if premium is not None and deductible is not None:
+                return (
+                    f"{name} trades a monthly premium of ${premium} against a deductible of "
+                    f"${deductible}. A lower premium usually means you take on more cost before "
+                    "coverage becomes generous."
+                )
+        if isinstance(simulation, dict) and simulation.get("totalAnnualCost") is not None:
+            return (
+                "The main difference is usually the tradeoff between monthly premium, deductible, "
+                f"and expected yearly total cost. Your current simulation estimates about "
+                f"${simulation['totalAnnualCost']} for the year."
+            )
+        return (
+            "The main difference is usually the tradeoff between monthly premium, deductible, and worst-case yearly risk."
+        )
+
+    @staticmethod
+    def _cost_summary_response(context: dict[str, Any]) -> str:
+        simulation = context.get("simulationSummary") if isinstance(context, dict) else None
+        current_plan = context.get("currentPlan") if isinstance(context, dict) else None
+
+        if isinstance(simulation, dict):
+            annual = simulation.get("totalAnnualCost")
+            monthly = simulation.get("monthlyAverage")
+            oop = simulation.get("estimatedOutOfPocket")
+            plan_name = None
+            if isinstance(current_plan, dict):
+                plan_name = current_plan.get("name")
+
+            if annual is not None and monthly is not None and oop is not None:
+                plan_label = f" with {plan_name}" if plan_name else ""
+                return (
+                    f"Based on your current simulation{plan_label}, your estimated annual cost is "
+                    f"${annual}, with about ${monthly} per month on average and roughly ${oop} in "
+                    "out-of-pocket costs."
+                )
+
+        return (
+            "Your total estimated cost combines premiums with expected out-of-pocket spending based on the usage you entered."
         )
