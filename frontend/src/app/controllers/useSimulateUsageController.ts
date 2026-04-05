@@ -38,9 +38,18 @@ export function useSimulateUsageController(): SimulateUsageController {
   );
 
   const runSimulation = useCallback(() => {
-    sessionStorage.setItem("simulationInputs", JSON.stringify(inputs));
-    sessionStorage.setItem("openSimulationDetail", "true");
-    navigate("/compare-plans");
+    navigate("/compare-plans", {
+      state: {
+        restoreSimulation: {
+          activeIndex: 1,
+          dependents: 0,
+          primaryVisits: inputs.pcpVisits,
+          specialistVisits: inputs.specialistVisits,
+          prescriptions: inputs.labTests,
+          erVisits: inputs.erVisits,
+        },
+      },
+    });
   }, [inputs, navigate]);
 
   return { inputs, updateField, runSimulation };
