@@ -63,7 +63,7 @@ function formatCurrency(value: unknown): string | null {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
-export function AiAssistantComingSoon() {
+export function AiAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
