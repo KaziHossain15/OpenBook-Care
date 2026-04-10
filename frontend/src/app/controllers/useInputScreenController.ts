@@ -3,9 +3,33 @@ import { useNavigate } from "react-router-dom";
 import {
   UserPreferences,
   DEFAULT_PREFERENCES,
+  deserializePreferences,
   isPreferencesValid,
   serializePreferences,
 } from "../models/UserPreferences";
+
+const PREFERENCES_STORAGE_KEY = "userPreferences";
+
+function readStoredPreferences(): UserPreferences {
+  try {
+    const raw = sessionStorage.getItem(PREFERENCES_STORAGE_KEY);
+    if (raw) return deserializePreferences(raw);
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PREFERENCES;
+}
+
+function writeStoredPreferences(prefs: UserPreferences): void {
+  try {
+    sessionStorage.setItem(
+      PREFERENCES_STORAGE_KEY,
+      serializePreferences(prefs)
+    );
+  } catch {
+    /* ignore */
+  }
+}
 
 // GRASP: Controller
 // Handles the "Enter Preferences" use-case. It is the first object after the
@@ -33,16 +57,21 @@ export interface InputScreenController {
 
 export function useInputScreenController(): InputScreenController {
   const navigate = useNavigate();
-  const [preferences, setPreferences] =
-    useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useState<UserPreferences>(
+    readStoredPreferences
+  );
 
   // GRASP: Information Expert delegates validation to the model
   const isValid = isPreferencesValid(preferences);
 
-  // Pure field update — no validation or side-effects mixed in
+  // Persist on every change so navigating away and back restores the draft
   const updateField = useCallback(
     <K extends keyof UserPreferences>(field: K, value: UserPreferences[K]) => {
-      setPreferences((prev) => ({ ...prev, [field]: value }));
+      setPreferences((prev) => {
+        const next = { ...prev, [field]: value };
+        writeStoredPreferences(next);
+        return next;
+      });
     },
     []
   );
@@ -53,7 +82,7 @@ export function useInputScreenController(): InputScreenController {
   //   3. Navigate
   const submit = useCallback(() => {
     if (!isPreferencesValid(preferences)) return;
-    sessionStorage.setItem("userPreferences", serializePreferences(preferences));
+    writeStoredPreferences(preferences);
     navigate("/compare-plans");
   }, [preferences, navigate]);
 
