@@ -52,6 +52,14 @@ python3 -m pip install -r requirements.txt
 python3 -m uvicorn main:app --reload --port 8000
 ```
 
+or
+
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
+```
+
 The backend exposes:
 - `GET /api/plans?zip=XXXXX`
 - `POST /api/chat/session`
