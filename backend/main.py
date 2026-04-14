@@ -129,6 +129,8 @@ def _response_or_error(payload: dict[str, Any]) -> dict[str, Any]:
     error_code = payload.get("errorCode")
     if error_code:
         status_code = _ERROR_STATUS.get(str(error_code), 400)
+        if status_code < 400:
+            return payload
         raise HTTPException(status_code=status_code, detail=payload)
     return payload
 

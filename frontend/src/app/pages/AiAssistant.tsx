@@ -63,6 +63,31 @@ function formatCurrency(value: unknown): string | null {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<ChatMessage>;
+  return (
+    typeof candidate.messageId === "string" &&
+    (candidate.role === "user" || candidate.role === "assistant") &&
+    typeof candidate.content === "string"
+  );
+}
+
+function assertSubmitMessageResponse(payload: unknown): SubmitMessageResponse {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("The chatbot response could not be read. Please retry.");
+  }
+
+  const candidate = payload as Partial<SubmitMessageResponse>;
+  if (
+    !isChatMessage(candidate.userMessage) ||
+    !isChatMessage(candidate.assistantMessage)
+  ) {
+    throw new Error("The chatbot response could not be read. Please retry.");
+  }
+  return candidate as SubmitMessageResponse;
+}
+
 export function AiAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -170,15 +195,17 @@ export function AiAssistant() {
     setSendError(null);
 
     try {
-      const payload = await parseResponse<SubmitMessageResponse>(
-        await fetch(`/api/chat/${sessionId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: content,
-            context: chatContext,
+      const payload = assertSubmitMessageResponse(
+        await parseResponse<SubmitMessageResponse>(
+          await fetch(`/api/chat/${sessionId}/messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: content,
+              context: chatContext,
+            }),
           }),
-        }),
+        ),
       );
 
       setMessages((prev) => [
