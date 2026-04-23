@@ -10,20 +10,19 @@ Stack:
 ## Running Locally
 
 The app uses two local processes:
-- the Vite frontend on `http://localhost:5173`
-- the FastAPI backend on `http://localhost:8000`
+- Vite frontend on `http://localhost:5173`
+- FastAPI backend on `http://localhost:8000`
 
 ### Prerequisites
 
 - Node.js 18+
 - Python 3.9+
 
-### 1. Configure Your Own API Key
+### 1. Configure Environment Variables
 
-Copy the example file and add your own Anthropic API key:
+From the project root:
 
 ```bash
-cd /Users/tz/Desktop/BU/cs411/OpenBook-Care
 cp .env.example .env
 ```
 
@@ -42,21 +41,44 @@ Notes:
 - If `ANTHROPIC_API_KEY` is missing, the app falls back to mock chat mode.
 - If you change `.env`, restart the backend.
 
-### 2. Start the Backend
+### 2. Install All Dependencies (One Command)
+
+Run the install script from the project root:
+
+```bash
+bash install-deps.sh
+```
+
+This installs:
+- Backend Python dependencies from `backend/requirements.txt`
+  - `fastapi==0.115.5`
+  - `uvicorn[standard]==0.32.1`
+  - `httpx==0.27.2`
+- Frontend npm dependencies from `frontend/package.json`
+
+The script creates a backend virtual environment at `backend/.venv` and installs Python packages there.
+
+### 3. Run the App (One Command)
+
+From the project root:
+
+```bash
+bash run-all.sh
+```
+
+This starts:
+- Backend on `http://localhost:8000`
+- Frontend on `http://localhost:5173`
+
+If `run-all.sh` does not work on your machine, use the manual steps below.
+
+### 4. Manual: Start the Backend
 
 In one terminal:
 
 ```bash
-cd /Users/tz/Desktop/BU/cs411/OpenBook-Care/backend
-python3 -m pip install -r requirements.txt
-python3 -m uvicorn main:app --reload --port 8000
-```
-
-or
-
-```bash
 cd backend
-pip install -r requirements.txt
+source .venv/bin/activate
 python -m uvicorn main:app --reload --port 8000
 ```
 
@@ -66,17 +88,26 @@ The backend exposes:
 - `POST /api/chat/{session_id}/acknowledge-disclaimer`
 - `POST /api/chat/{session_id}/messages`
 
-### 3. Start the Frontend
+### 5. Manual: Start the Frontend
 
 In a second terminal:
 
 ```bash
-cd /Users/tz/Desktop/BU/cs411/OpenBook-Care/frontend
+cd frontend
 npm install
 npm run dev
 ```
 
 The Vite dev server proxies `/api/*` requests to `localhost:8000`.
+
+### 6. Manual: Compile the Program (Production Build)
+
+If `run-all.sh` fails or you want to verify the frontend build manually:
+
+```bash
+cd frontend
+npm run build
+```
 
 ## Testing the AI Assistant
 
@@ -153,7 +184,7 @@ The `ai-ml/` folder contains:
 - Use `python3 -m uvicorn main:app --reload --port 8000`
 
 `pip: command not found`
-- Use `python3 -m pip install -r requirements.txt`
+- Run `bash install-deps.sh` from the project root to install backend packages into `backend/.venv`
 
 `npm: command not found`
 - Install Node.js and restart your terminal
