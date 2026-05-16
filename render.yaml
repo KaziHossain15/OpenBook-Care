@@ -1,0 +1,17 @@
+# Render Blueprint — deploy the FastAPI API from this Dockerfile.
+# Create a Web Service, point it at this repo, set Dockerfile path to ./Dockerfile
+# at repo root, then add secrets: ANTHROPIC_API_KEY, OPENBOOK_CHAT_MODE, etc.
+
+services:
+  - type: web
+    name: openbook-care-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /docs
+    envVars:
+      - key: OPENBOOK_CHAT_MODE
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        sync: false

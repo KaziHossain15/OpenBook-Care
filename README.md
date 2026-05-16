@@ -161,6 +161,76 @@ If the live Anthropic integration is active, the response will contain:
 "providerMode": "anthropic"
 ```
 
+## Deploying (Vercel frontend + hosted API)
+
+The UI is a static Vite build; the FastAPI service must run separately (Docker-friendly repo layout).
+
+### 1. Deploy the API (Dockerfile)
+
+The repo-root **`Dockerfile`** copies **`backend/`** and **`ai-ml/`** and runs Uvicorn from `backend/`.
+
+You can deploy this image on **Railway**, **Render**, **Fly.io**, **GCP Cloud Run**, etc. Configure these **server-side** variables on that platform (never expose API keys to the browser):
+
+- `ANTHROPIC_API_KEY`
+- `OPENBOOK_CHAT_MODE` (e.g. `anthropic` or `mock`)
+- Optional: `ANTHROPIC_MODEL`
+- Optional CORS tuning (see `.env.example`): `CORS_ALLOW_ORIGINS`, `CORS_ALLOW_ORIGIN_REGEX`
+
+Render users can start from **`render.yaml`** as a blueprint.
+
+### 2. Deploy the frontend on Vercel
+
+In the Vercel project:
+
+- **Root Directory**: `frontend`
+- **Build**: `npm run build` (or `pnpm build` if you use pnpm)
+- **Output**: `dist`
+
+**SPA routing:** `frontend/vercel.json` rewrites unknown paths to `index.html` so React Router deep links work after refresh.
+
+### 3. Connect the browser to `/api`
+
+Pick **one** strategy:
+
+**A — Same-origin proxy (leave `VITE_API_BASE_URL` unset)**  
+Edit **`frontend/vercel.json`** so the **`/api` rewrite runs before** the SPA fallback, targeting your deployed API origin:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://YOUR_API_HOST/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+Replace `YOUR_API_HOST` with your API hostname (no path). The frontend keeps calling relative `/api/...`; Vercel proxies those requests server-side.
+
+**B — Direct API URL (`VITE_API_BASE_URL`)**  
+Add your API origin (no trailing slash) in Vercel **Environment Variables**:
+
+```env
+VITE_API_BASE_URL=https://YOUR_API_HOST
+```
+
+Rebuild/redeploy. The backend must allow your frontend origin via **`CORS_ALLOW_ORIGINS`** and/or the default **`https://*.vercel.app`** regex (see `.env.example`).
+
+### 4. Local smoke test (SPA fallback)
+
+After `npm install` in `frontend/`:
+
+```bash
+cd frontend && npm run smoke
+```
+
+This builds the app and checks that `/`, `/cost-results`, `/compare-plans`, `/ai-assistant`, and `/simulate-usage` return HTTP 200 when served as a static SPA (same behavior Vercel relies on for client-side routes).
+
 ## Project Structure
 
 ```text

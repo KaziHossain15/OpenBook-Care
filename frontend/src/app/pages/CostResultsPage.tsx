@@ -5,6 +5,7 @@ import {
   DEFAULT_PREFERENCES,
   deserializePreferences,
 } from "../models/UserPreferences";
+import { apiUrl } from "../../lib/apiUrl";
 
 const PREFERENCES_STORAGE_KEY = "userPreferences";
 
@@ -43,7 +44,7 @@ export function CostResultsPage() {
       return;
     }
 
-    fetch(`/api/plans?zip=${encodeURIComponent(zip)}`)
+    fetch(apiUrl(`/api/plans?zip=${encodeURIComponent(zip)}`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<Plan[]>;

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { apiUrl } from "../../lib/apiUrl";
 import type { ComparePlansSimulationSnapshot } from "./ComparePlans";
 
 type ChatRole = "user" | "assistant";
@@ -133,7 +134,7 @@ export function AiAssistant() {
 
       try {
         const payload = await parseResponse<CreateSessionResponse>(
-          await fetch("/api/chat/session", { method: "POST" }),
+          await fetch(apiUrl("/api/chat/session"), { method: "POST" }),
         );
 
         if (cancelled) return;
@@ -169,11 +170,14 @@ export function AiAssistant() {
 
     try {
       await parseResponse(
-        await fetch(`/api/chat/${sessionId}/acknowledge-disclaimer`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ acknowledged: true }),
-        }),
+        await fetch(
+          apiUrl(`/api/chat/${sessionId}/acknowledge-disclaimer`),
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ acknowledged: true }),
+          },
+        ),
       );
       setIsDisclaimerAcknowledged(true);
     } catch (error) {
@@ -197,7 +201,7 @@ export function AiAssistant() {
     try {
       const payload = assertSubmitMessageResponse(
         await parseResponse<SubmitMessageResponse>(
-          await fetch(`/api/chat/${sessionId}/messages`, {
+          await fetch(apiUrl(`/api/chat/${sessionId}/messages`), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

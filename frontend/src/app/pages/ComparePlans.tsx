@@ -6,6 +6,7 @@ import {
   deserializePreferences,
   type UserPreferences,
 } from "../models/UserPreferences";
+import { apiUrl } from "../../lib/apiUrl";
 
 function loadStoredPreferences(): UserPreferences {
   try {
@@ -285,7 +286,7 @@ export function ComparePlans() {
 
   useEffect(() => {
     const region = preferences.zipCode ?? "";
-    fetch(`/api/plans?zip=${encodeURIComponent(region)}`)
+    fetch(apiUrl(`/api/plans?zip=${encodeURIComponent(region)}`))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<Plan[]>;

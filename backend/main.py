@@ -51,12 +51,41 @@ from infrastructure.llm_gateway_factory import build_llm_gateway  # noqa: E402
 
 app = FastAPI(title="OpenBook Care API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
+
+def _cors_kwargs() -> dict[str, Any]:
+    """
+    Browser clients may call the API from another origin when VITE_API_BASE_URL
+    points at this host. Allow localhost dev, optional explicit origins, and by
+    default any *.vercel.app preview/production URL.
+
+    Set CORS_ALLOW_ORIGIN_REGEX="" to disable regex matching entirely.
+    """
+    extras_raw = os.getenv("CORS_ALLOW_ORIGINS", "")
+    extras = [o.strip() for o in extras_raw.split(",") if o.strip()]
+    allow_origins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        *extras,
+    ]
+
+    regex_env = os.getenv("CORS_ALLOW_ORIGIN_REGEX")
+    if regex_env is None:
+        allow_origin_regex = r"https://.*\.vercel\.app"
+    else:
+        stripped = regex_env.strip()
+        allow_origin_regex = stripped or None
+
+    kwargs: dict[str, Any] = {
+        "allow_origins": allow_origins,
+        "allow_methods": ["GET", "POST"],
+        "allow_headers": ["*"],
+    }
+    if allow_origin_regex:
+        kwargs["allow_origin_regex"] = allow_origin_regex
+    return kwargs
+
+
+app.add_middleware(CORSMiddleware, **_cors_kwargs())
 
 
 def _load_dotenv() -> None:
